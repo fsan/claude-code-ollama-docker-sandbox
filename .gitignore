@@ -1,0 +1,38 @@
+# Claude Code Docker Sandbox - Git Ignore
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Shell history
+.bash_history
+.zsh_history
+
+# Claude Code
+.claude/
+
+# Environment
+.env
+.env.*
+!.env.example
