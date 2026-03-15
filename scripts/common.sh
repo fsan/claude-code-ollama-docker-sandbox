@@ -148,14 +148,15 @@ ensure_sandbox() {
 }
 
 # Ensure sandbox is running
+# Note: docker sandbox exec automatically starts stopped sandboxes, so we only
+# need to ensure the sandbox exists. The actual starting happens during exec.
 ensure_sandbox_running() {
   if sandbox_running; then
     printf 'Sandbox is running: %s\n' "${SANDBOX_NAME}"
+  elif sandbox_exists; then
+    printf 'Sandbox exists but not running, will be started on exec: %s\n' "${SANDBOX_NAME}"
   else
-    # Note: Docker sandbox doesn't have a start command
-    # Sandboxes that exist but aren't running need to be recreated
-    printf 'Sandbox exists but not running, will recreate: %s\n' "${SANDBOX_NAME}"
-    docker sandbox rm "${SANDBOX_NAME}" 2>/dev/null || true
+    # Sandbox doesn't exist, create it
     ensure_sandbox
   fi
 }
