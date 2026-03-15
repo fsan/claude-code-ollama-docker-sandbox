@@ -311,24 +311,8 @@ All state is stored in `~/.cloma/`:
 Warm templates pre-install dependencies for faster sandbox startup.
 
 ```bash
-# Create warm template (using legacy Makefile)
-make template
-
-# Remove warm template
-make template-clean
-```
-
-## Legacy Makefile Commands
-
-The original bash scripts are still available via Makefile:
-
-```bash
-make setup    # Initial setup
-make run      # Run sandbox
-make doctor   # Health checks
-make shell    # Open shell
-make stop     # Stop sandbox
-make clean    # Remove sandbox
+# Create warm template using Docker
+docker build -t cloma-sandbox-template:warm -f Dockerfile.template .
 ```
 
 ## Troubleshooting
@@ -379,7 +363,6 @@ cloma/
 │   └── config/                # Configuration
 ├── image/
 │   └── start-agent.sh         # Sandbox entry script
-├── scripts/                   # Legacy bash scripts
 ├── go.mod
 ├── Makefile
 └── README.md

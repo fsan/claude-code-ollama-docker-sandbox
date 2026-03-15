@@ -1,57 +1,74 @@
-MODEL ?= glm-5:cloud
-WORKSPACE ?= $(PWD)
-OLLAMA_PORT ?= 11434
-FLAGS ?=
-
 # Binary location
 BIN_DIR := bin
 CLOMA_BIN := $(BIN_DIR)/cloma
 
-.DEFAULT_GOAL := run
-.PHONY: setup run doctor shell logs stop clean template template-clean
-.PHONY: build install cloma cloma-setup
+# Go module info
+MODULE := github.com/fsan/cloma
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+LDFLAGS := -ldflags "-X $(MODULE)/internal/cmd.Version=$(VERSION) -X $(MODULE)/internal/cmd.GitCommit=$(GIT_COMMIT) -X $(MODULE)/internal/cmd.BuildDate=$(BUILD_DATE)"
 
-setup:
-	CLAUDE_CODE_MODEL="$(MODEL)" OLLAMA_PORT="$(OLLAMA_PORT)" ./scripts/setup.sh "$(WORKSPACE)"
+.DEFAULT_GOAL := help
+.PHONY: help build install uninstall clean test run doctor shell stop cloma
 
-run:
-	CLAUDE_CODE_MODEL="$(MODEL)" OLLAMA_PORT="$(OLLAMA_PORT)" CLAUDE_CODE_FLAGS="$(FLAGS)" ./scripts/run-claude-code.sh "$(WORKSPACE)"
+help:
+	@echo "cloma - Docker Sandbox Manager for Code Agents"
+	@echo ""
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "Building:"
+	@echo "  build       Build the cloma binary (bin/cloma)"
+	@echo "  install     Install cloma to /usr/local/bin"
+	@echo "  uninstall   Remove cloma from /usr/local/bin"
+	@echo "  clean       Remove build artifacts"
+	@echo "  test        Run tests"
+	@echo ""
+	@echo "Running:"
+	@echo "  run         Run cloma with custom ARGS"
+	@echo "  doctor      Run health checks"
+	@echo "  shell       Open an interactive shell in the sandbox"
+	@echo "  stop        Stop the running sandbox"
+	@echo ""
+	@echo "Development:"
+	@echo "  cloma       Run cloma with custom ARGS (e.g., make cloma ARGS='list')"
 
-doctor:
-	CLAUDE_CODE_MODEL="$(MODEL)" OLLAMA_PORT="$(OLLAMA_PORT)" ./scripts/doctor.sh "$(WORKSPACE)"
-
-shell:
-	./scripts/shell.sh "$(WORKSPACE)"
-
-logs:
-	./scripts/logs.sh "$(WORKSPACE)"
-
-stop:
-	./scripts/stop-sandbox.sh "$(WORKSPACE)"
-
-clean:
-	./scripts/clean-sandbox.sh "$(WORKSPACE)"
-
-template:
-	./scripts/bake-template.sh
-
-template-clean:
-	./scripts/clean-template.sh
-
-# Go CLI targets
+# Build targets
 build: $(CLOMA_BIN)
 
 $(CLOMA_BIN):
-	go build -o $(CLOMA_BIN) ./cmd/cloma
+	go build $(LDFLAGS) -o $(CLOMA_BIN) ./cmd/cloma
 
 install: build
 	@echo "Installing cloma to /usr/local/bin..."
-	sudo cp $(CLOMA_BIN) /usr/local/bin/cloma
+	install -m 755 $(CLOMA_BIN) /usr/local/bin/cloma
 	@echo "Installed: /usr/local/bin/cloma"
 
-cloma: build
+uninstall:
+	@echo "Removing cloma from /usr/local/bin..."
+	rm -f /usr/local/bin/cloma
+	@echo "Removed: /usr/local/bin/cloma"
+
+clean:
+	rm -rf $(BIN_DIR)
+	rm -f ./cloma
+
+test:
+	go test -v ./...
+
+# Run targets (using Go CLI)
+run: build
 	./$(CLOMA_BIN) $(ARGS)
 
-cloma-setup: build
-	@echo "Creating ~/.cloma directory structure..."
+doctor: build
 	./$(CLOMA_BIN) doctor
+
+shell: build
+	./$(CLOMA_BIN) shell
+
+stop: build
+	./$(CLOMA_BIN) stop
+
+# Development helper
+cloma: build
+	./$(CLOMA_BIN) $(ARGS)
