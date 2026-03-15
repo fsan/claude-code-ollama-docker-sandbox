@@ -1,17 +1,17 @@
-# Claude Code Docker Sandbox
+# Cloma - Docker Sandbox Manager
 
-A Docker-based sandbox environment for running Claude Code in isolation, connecting to Ollama running on the host machine.
+A Go CLI for managing Docker Desktop sandboxes for running code agents in isolation, connecting to Ollama running on the host machine.
 
 ## Overview
 
-This project creates a secure, isolated environment for Claude Code using Docker Desktop's sandbox (microVM) technology. Claude Code runs inside the sandbox while connecting to Ollama on your host machine for inference.
+This project creates a secure, isolated environment for code agents using Docker Desktop's sandbox (microVM) technology. Agents run inside the sandbox while connecting to Ollama on your host machine for inference.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Host Machine                          │
 │  ┌─────────────────┐    ┌─────────────────────────────────┐ │
-│  │     Ollama      │    │         Makefile Targets        │ │
-│  │  (port 11434)   │    │  setup, run, shell, stop, clean │ │
+│  │     Ollama      │    │          cloma CLI              │ │
+│  │  (port 11434)   │    │   run, list, shell, stop, clean │ │
 │  └────────┬────────┘    └─────────────────────────────────┘ │
 │           │                        │                        │
 │           │                        ▼                        │
@@ -24,7 +24,7 @@ This project creates a secure, isolated environment for Claude Code using Docker
 │                     │              │                    │   │
 │                     │              ▼                    │   │
 │                     │  ┌────────────────────────────┐  │   │
-│                     │  │      Claude Code           │  │   │
+│                     │  │       Code Agent           │  │   │
 │                     │  │  (ANTHROPIC_BASE_URL set)  │  │   │
 │                     │  └────────────────────────────┘  │   │
 │                     │              │                    │   │
@@ -49,127 +49,287 @@ This project creates a secure, isolated environment for Claude Code using Docker
    # Start Ollama
    ollama serve
    ```
-3. **Model pulled** in Ollama (e.g., qwen3-coder)
+3. **Model pulled** in Ollama (e.g., glm-5:cloud)
    ```bash
-   ollama pull qwen3-coder
+   ollama pull glm-5:cloud
    ```
+
+## Installation
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/cloma.git
+cd cloma
+
+# Build
+make build
+
+# Install to /usr/local/bin (optional)
+make install
+```
+
+### Using Go Install
+
+```bash
+go install github.com/yourusername/cloma/cmd/cloma@latest
+```
 
 ## Quick Start
 
 ```bash
-# 1. Setup (creates warm template)
-make setup
+# Run in current directory (workspace is auto-mounted)
+cloma
 
-# 2. Run Claude Code in sandbox
-make run
+# Run with specific workspace
+cloma --workspace ~/myproject
 
-# 3. When done, stop the sandbox
-make stop
+# Run with specific model
+cloma --model glm-4.7-flash
+
+# List all managed sandboxes
+cloma list
+
+# Run health checks
+cloma doctor
 ```
 
-## Available Commands
+## Commands
 
-| Command | Description |
-|---------|-------------|
-| `make setup` | Initial setup: check prerequisites, create warm template |
-| `make run` | Launch Claude Code in sandbox |
-| `make doctor` | Validate setup and connectivity |
-| `make shell` | Open interactive shell in sandbox |
-| `make logs` | View sandbox logs |
-| `make stop` | Stop running sandbox |
-| `make clean` | Remove sandbox completely |
-| `make template` | Create/bake warm template |
-| `make template-clean` | Remove warm template |
+### `cloma run` (default)
+
+Run an agent in an isolated Docker sandbox.
+
+```bash
+# Basic usage - uses current directory as workspace
+cloma
+
+# Specify workspace
+cloma --workspace /path/to/project
+
+# Specify model
+cloma --model glm-4.7-flash
+
+# Pass additional flags to the agent
+cloma --flags '--allow-dangerously-skip-permissions'
+
+# Combine options
+cloma -w ~/myproject -m glm-4.7-flash --flags '--verbose'
+```
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--workspace` | `-w` | `.` (current dir) | Workspace directory |
+| `--model` | `-m` | `glm-5:cloud` | AI model to use |
+| `--port` | `-p` | `11434` | Ollama port |
+| `--flags` | `-f` | (empty) | Additional agent flags |
+
+### `cloma list`
+
+List all cloma-managed sandboxes.
+
+```bash
+# Human-readable output
+cloma list
+
+# JSON output for scripting
+cloma list --json
+
+# Example output:
+# NAME                              STATUS    WORKSPACE
+# --------------------------------------------------------------------------------
+# cloma-myproject-a1b2c3d4          running   myproject
+# cloma-another-project-e5f6g7h8    stopped   another-project
+```
+
+### `cloma shell`
+
+Open an interactive shell in the sandbox.
+
+```bash
+# Open shell in current workspace's sandbox
+cloma shell
+
+# Open shell in specific workspace's sandbox
+cloma shell --workspace ~/myproject
+```
+
+### `cloma stop`
+
+Stop a running sandbox.
+
+```bash
+# Stop current workspace's sandbox
+cloma stop
+
+# Stop specific workspace's sandbox
+cloma stop --workspace ~/myproject
+```
+
+### `cloma clean`
+
+Remove a sandbox completely (stops and removes).
+
+```bash
+# Remove with confirmation
+cloma clean
+
+# Force removal without confirmation
+cloma clean --force
+
+# Remove specific workspace's sandbox
+cloma clean --workspace ~/myproject
+```
+
+### `cloma doctor`
+
+Run health checks on the system.
+
+```bash
+# Human-readable output
+cloma doctor
+
+# JSON output
+cloma doctor --json
+
+# Example output:
+# === Cloma Docker Doctor ===
+#
+# Checking Docker installation... OK
+# Checking Docker Desktop sandbox plugin... OK
+# Checking Ollama connectivity... OK
+# Checking model glm-5:cloud... OK
+# Checking workspace directory... OK
+#   /Users/you/myproject
+# Checking warm template... WARN
+#   Warm template not found: cloma-sandbox-template:warm
+#   First run will be slower. Run: make template
+# Checking sandbox... OK
+#   cloma-myproject-a1b2c3d4 (stopped)
+#
+# === Summary ===
+# 1 warning(s), 0 error(s)
+# Setup is functional but could be improved.
+```
+
+### `cloma version`
+
+Print version information.
+
+```bash
+cloma version
+
+# JSON output
+cloma version --json
+```
+
+## Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `--config` | Config file (default: `~/.cloma/config.yaml`) |
+| `-v, --verbose` | Verbose output (stackable: `-v`, `-vv`) |
+| `--json` | Output in JSON format |
+
+## Workspace Management
+
+### Automatic Workspace Resolution
+
+`cloma` intelligently resolves workspace paths:
+
+1. **No workspace specified**: Creates a random workspace in `~/.cloma/workspaces/`
+   ```bash
+   cloma
+   # Creates: ~/.cloma/workspaces/cloma-a1b2c3d4/
+   # Output: Created new workspace: /Users/you/.cloma/workspaces/cloma-a1b2c3d4
+   ```
+
+2. **Current directory (`.`)**: Resolves to absolute path
+   ```bash
+   cloma --workspace .
+   # Uses: /Users/you/current/directory
+   ```
+
+3. **Home directory expansion**: Supports `~` and `~/`
+   ```bash
+   cloma --workspace ~/myproject
+   # Uses: /Users/you/myproject
+   ```
+
+### Sandbox Naming
+
+Sandboxes are named using the pattern: `cloma-{slug}-{hash}`
+
+- **slug**: Lowercase basename of workspace (special chars replaced with hyphens)
+- **hash**: First 8 characters of SHA256 hash of workspace path
+
+Example:
+- Workspace: `/Users/fox/myproject`
+- Sandbox: `cloma-myproject-bade6fe0`
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MODEL` | `glm-5:cloud` | Ollama model to use |
-| `OLLAMA_PORT` | `11434` | Host Ollama port |
-| `WORKSPACE` | Current directory | Directory to mount |
-| `FLAGS` | *(empty)* | Additional flags for Claude Code (e.g., `--allow-dangerously-skip-permissions`) |
-| `CLAUDE_CODE_SANDBOX_NAME` | Auto-generated | Custom sandbox name |
-| `CLAUDE_CODE_VERSION` | `latest` | Claude Code version |
-| `CLAUDE_CODE_TEMPLATE_TAG` | `claude-code-sandbox-template:warm` | Template image tag |
-| `FLAGS` | `` | Additional flags to pass to Claude Code (e.g., `--allow-dangerously-skip-permissions`) |
+| Variable | Description |
+|----------|-------------|
+| `CLOMA_MODEL` | AI model to use (default: `glm-5:cloud`) |
+| `OLLAMA_PORT` | Host Ollama port (default: `11434`) |
+| `OLLAMA_URL` | Ollama base URL (default: `http://localhost:11434`) |
+| `CLOMA_TEMPLATE_TAG` | Template image tag (default: `cloma-sandbox-template:warm`) |
+| `CLOMA_STATE_DIR` | State directory (default: `~/.cloma`) |
+| `CLOMA_WORKSPACES_DIR` | Workspaces directory (default: `~/.cloma/workspaces`) |
 
 ### Example Usage
 
 ```bash
 # Use a different model
-CLAUDE_CODE_MODEL=glm-4.7-flash make run
+CLOMA_MODEL=glm-4.7-flash cloma
 
-# Use a different workspace
-WORKSPACE=/path/to/project make run
-
-# Custom Ollama port
-OLLAMA_PORT=11435 make run
-
-# Skip permission checks (useful for automation)
-FLAGS='--allow-dangerously-skip-permissions' make run
+# Use a different Ollama port
+OLLAMA_PORT=11435 cloma
 
 # Combine multiple options
-FLAGS='--allow-dangerously-skip-permissions' MODEL=glm-4.7-flash make run
+CLOMA_MODEL=glm-4.7-flash cloma --workspace ~/myproject
 ```
 
-## How It Works
+## State Directory
 
-### Architecture
+All state is stored in `~/.cloma/`:
 
-1. **Warm Template**: A pre-built Docker image with Claude Code installed for faster startup
-2. **Sandbox**: A microVM-based isolated environment created from the template
-3. **Network Proxy**: Allows sandbox to connect to host's Ollama via `host.docker.internal`
+```
+~/.cloma/
+├── config.yaml           # Configuration (optional)
+└── workspaces/          # Random workspaces created by `cloma`
+    ├── cloma-a1b2c3d4/
+    └── cloma-e5f6g7h8/
+```
 
-### Network Configuration
+## Warm Templates (Optional)
 
-The sandbox connects to Ollama on the host using Docker's `host.docker.internal` DNS name:
-
-- **Host Ollama URL**: `http://host.docker.internal:11434`
-- **Network proxy**: Configured automatically via `docker sandbox network proxy`
-
-### Environment Variables Inside Sandbox
-
-Claude Code inside the sandbox sees:
+Warm templates pre-install dependencies for faster sandbox startup.
 
 ```bash
-ANTHROPIC_AUTH_TOKEN=ollama
-ANTHROPIC_API_KEY=
-ANTHROPIC_BASE_URL=http://host.docker.internal:11434
-CLAUDE_CODE_MODEL=qwen3-coder
+# Create warm template (using legacy Makefile)
+make template
+
+# Remove warm template
+make template-clean
 ```
 
-## Development
+## Legacy Makefile Commands
 
-### Project Structure
+The original bash scripts are still available via Makefile:
 
+```bash
+make setup    # Initial setup
+make run      # Run sandbox
+make doctor   # Health checks
+make shell    # Open shell
+make stop     # Stop sandbox
+make clean    # Remove sandbox
 ```
-claude-code-docker/
-├── image/
-│   └── start-claude-code.sh   # Entry point script for sandbox
-├── scripts/
-│   ├── common.sh              # Shared functions and configuration
-│   ├── setup.sh               # Full setup: checks, template, doctor
-│   ├── run-claude-code.sh     # Launch sandbox with Claude Code
-│   ├── doctor.sh              # Validate setup connectivity
-│   ├── shell.sh               # Interactive shell inside sandbox
-│   ├── logs.sh                # View logs
-│   ├── stop-sandbox.sh        # Stop running sandbox
-│   ├── clean-sandbox.sh       # Remove sandbox
-│   ├── bake-template.sh       # Create warm template image
-│   └── clean-template.sh      # Remove template image
-├── .gitignore
-├── Makefile
-└── README.md
-```
-
-### Adding Custom Configuration
-
-1. Edit `image/start-claude-code.sh` to customize startup behavior
-2. Edit `scripts/common.sh` to modify shared functions
-3. Run `make template-clean template` to rebuild the template
 
 ## Troubleshooting
 
@@ -190,7 +350,7 @@ ollama serve
 ollama list
 
 # Pull the model
-ollama pull qwen3-coder
+ollama pull glm-5:cloud
 ```
 
 ### Sandbox Plugin Not Available
@@ -201,16 +361,42 @@ Ensure Docker Desktop 4.58+ is installed and the sandbox plugin is enabled in se
 
 ```bash
 # Run doctor to diagnose
-make doctor
+cloma doctor
 ```
 
-## Sources & References
+## Development
 
-- [OpenClaw-Docker](https://github.com/SantiaGoMode/OpenClaw-Docker) - Similar architecture for OpenClaw
-- [Claude Code Setup](https://code.claude.com/docs/en/setup)
-- [Claude Code Third-Party Integrations](https://code.claude.com/docs/en/third-party-integrations)
-- [Ollama Claude Code Integration](https://docs.ollama.com/integrations/claude-code)
-- [Claude Code Sandboxing](https://code.claude.com/docs/en/sandboxing)
+### Project Structure
+
+```
+cloma/
+├── cmd/cloma/main.go          # Entry point
+├── internal/
+│   ├── cmd/                    # Cobra commands
+│   ├── sandbox/               # Docker sandbox operations
+│   ├── workspace/             # Workspace management
+│   ├── ollama/                # Ollama connectivity
+│   └── config/                # Configuration
+├── image/
+│   └── start-agent.sh         # Sandbox entry script
+├── scripts/                   # Legacy bash scripts
+├── go.mod
+├── Makefile
+└── README.md
+```
+
+### Building
+
+```bash
+# Build binary
+make build
+
+# Run tests
+go test ./...
+
+# Install locally
+make install
+```
 
 ## License
 

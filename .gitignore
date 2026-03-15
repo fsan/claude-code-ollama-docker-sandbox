@@ -1,5 +1,17 @@
 # Claude Code Docker Sandbox - Git Ignore
 
+# Go
+bin/
+/cloma
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
 # OS generated files
 .DS_Store
 .DS_Store?

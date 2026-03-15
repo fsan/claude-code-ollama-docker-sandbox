@@ -1,0 +1,32 @@
+package sandbox
+
+import (
+	"fmt"
+	"os/exec"
+)
+
+// Stop stops a running sandbox.
+// A stopped sandbox can be restarted later with exec commands.
+func Stop(sandboxName string) error {
+	cmd := exec.Command("docker", "sandbox", "stop", sandboxName)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to stop sandbox %s: %w, output: %s", sandboxName, err, string(output))
+	}
+	return nil
+}
+
+// StopIfExists stops a sandbox if it exists and is running.
+// Returns nil if the sandbox doesn't exist or is already stopped.
+func StopIfExists(sandboxName string) error {
+	running, err := IsRunning(sandboxName)
+	if err != nil {
+		return err
+	}
+
+	if !running {
+		return nil
+	}
+
+	return Stop(sandboxName)
+}
