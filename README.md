@@ -383,4 +383,4 @@ make install
 
 ## License
 
-MIT License
+GPL v3 - see [LICENSE](LICENSE) for details.
