@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"cloma/internal/config"
-	"cloma/internal/ollama"
-	"cloma/internal/sandbox"
-	"cloma/internal/workspace"
+	"github.com/fsan/cloma/internal/config"
+	"github.com/fsan/cloma/internal/ollama"
+	"github.com/fsan/cloma/internal/sandbox"
+	"github.com/fsan/cloma/internal/workspace"
 )
 
 // doctorCmd represents the doctor command

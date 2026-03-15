@@ -6,9 +6,9 @@ import (
 	"os/exec"
 
 	"github.com/spf13/cobra"
-	"cloma/internal/config"
-	"cloma/internal/sandbox"
-	"cloma/internal/workspace"
+	"github.com/fsan/cloma/internal/config"
+	"github.com/fsan/cloma/internal/sandbox"
+	"github.com/fsan/cloma/internal/workspace"
 )
 
 var shellWorkspace string

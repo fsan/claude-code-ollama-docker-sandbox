@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"cloma/internal/config"
-	"cloma/internal/ollama"
-	"cloma/internal/sandbox"
-	"cloma/internal/workspace"
+	"github.com/fsan/cloma/internal/config"
+	"github.com/fsan/cloma/internal/ollama"
+	"github.com/fsan/cloma/internal/sandbox"
+	"github.com/fsan/cloma/internal/workspace"
 )
 
 var (

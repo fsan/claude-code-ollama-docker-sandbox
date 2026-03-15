@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"cloma/internal/sandbox"
+	"github.com/fsan/cloma/internal/sandbox"
 )
 
 // listCmd represents the list command

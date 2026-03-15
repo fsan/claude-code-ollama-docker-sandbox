@@ -1,4 +1,4 @@
-module cloma
+module github.com/fsan/cloma
 
 go 1.22
 

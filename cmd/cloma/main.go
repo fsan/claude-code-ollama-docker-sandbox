@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cloma/internal/cmd"
+	"github.com/fsan/cloma/internal/cmd"
 )
 
 func main() {
