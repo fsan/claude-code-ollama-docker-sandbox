@@ -126,10 +126,20 @@ sandbox_running() {
   [ "${sb_status}" = "running" ]
 }
 
+# Check if sandbox has start script provisioned
+sandbox_provisioned() {
+  docker sandbox exec "${SANDBOX_NAME}" test -x /usr/local/bin/start-claude-code.sh 2>/dev/null
+}
+
 # Ensure sandbox exists (create if needed)
 ensure_sandbox() {
   if sandbox_exists; then
     printf 'Sandbox already exists: %s\n' "${SANDBOX_NAME}"
+    # Check if provisioned, if not, provision it
+    if ! sandbox_provisioned; then
+      printf 'Sandbox not provisioned, installing start script...\n'
+      provision_sandbox
+    fi
     return 0
   fi
 
@@ -142,9 +152,10 @@ ensure_sandbox() {
   else
     printf 'No warm template found, creating fresh sandbox.\n'
     docker sandbox create --name "${SANDBOX_NAME}" claude "${WORKSPACE}"
-    # Provision with Claude Code start script
-    provision_sandbox
   fi
+
+  # Provision with Claude Code start script
+  provision_sandbox
 }
 
 # Ensure sandbox is running
@@ -182,16 +193,25 @@ configure_proxy_policy() {
 # Provision sandbox with Claude Code
 provision_sandbox() {
   local sandbox_name="${SANDBOX_NAME:-$1}"
-  local asset_root="${ROOT_DIR}"
   local claude_version="${CLAUDE_CODE_VERSION:-latest}"
+  local script_file="${ROOT_DIR}/image/start-claude-code.sh"
 
   printf 'Provisioning sandbox with Claude Code...\n'
+
+  # Read and base64-encode the start script to avoid escaping issues
+  local script_b64
+  if [ -f "${script_file}" ]; then
+    script_b64=$(base64 < "${script_file}")
+  else
+    printf 'ERROR: Start script not found: %s\n' "${script_file}" >&2
+    exit 1
+  fi
 
   docker sandbox exec \
     --privileged \
     -u root \
     -e "CLAUDE_CODE_VERSION=${claude_version}" \
-    -e "ASSET_ROOT=${asset_root}" \
+    -e "SCRIPT_B64=${script_b64}" \
     "${sandbox_name}" \
     bash -lc '
       set -euo pipefail
@@ -212,11 +232,12 @@ provision_sandbox() {
       # Ensure start script directory exists
       install -d -m 0755 /usr/local/bin
 
-      # Copy start script if available
-      if [ -f "${ASSET_ROOT}/image/start-claude-code.sh" ]; then
-        install -m 0755 "${ASSET_ROOT}/image/start-claude-code.sh" /usr/local/bin/start-claude-code.sh
-        chown -R agent:agent /usr/local/bin/start-claude-code.sh 2>/dev/null || true
-      fi
+      # Decode and install start script
+      printf "%s" "$SCRIPT_B64" | base64 -d > /usr/local/bin/start-claude-code.sh
+      chmod 0755 /usr/local/bin/start-claude-code.sh
+      chown agent:agent /usr/local/bin/start-claude-code.sh 2>/dev/null || true
+
+      printf "Start script installed successfully\n"
     '
 }
 
