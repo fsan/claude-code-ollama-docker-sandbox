@@ -27,12 +27,12 @@ func TestResolve(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		input    string
-		setup    func() error
-		cleanup  func() error
-		wantErr  bool
-		check    func(t *testing.T, result string)
+		name    string
+		input   string
+		setup   func() error
+		cleanup func() error
+		wantErr bool
+		check   func(t *testing.T, result string)
 	}{
 		{
 			name:    "empty string creates random workspace",

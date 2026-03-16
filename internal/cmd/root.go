@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	cfgFile   string
-	verbose   int
+	cfgFile    string
+	verbose    int
 	jsonOutput bool
 )
 

@@ -4,9 +4,14 @@
 package sandbox
 
 import (
+	_ "embed"
+	"encoding/base64"
 	"errors"
 	"os/exec"
 )
+
+//go:embed start-claude-code.sh
+var startScript []byte
 
 // SandboxClient holds configuration for sandbox operations.
 type SandboxClient struct {
@@ -17,10 +22,6 @@ type SandboxClient struct {
 	// AgentVersion is the version of the agent to install.
 	// Default: "latest"
 	AgentVersion string
-
-	// StartScriptPath is the path to the start-claude-code.sh script.
-	// Default: "./image/start-claude-code.sh" (relative to project root)
-	StartScriptPath string
 }
 
 // Option is a function that configures a SandboxClient.
@@ -40,25 +41,22 @@ func WithAgentVersion(version string) Option {
 	}
 }
 
-// WithStartScriptPath sets the path to the start script.
-func WithStartScriptPath(path string) Option {
-	return func(c *SandboxClient) {
-		c.StartScriptPath = path
-	}
-}
-
 // NewClient creates a new SandboxClient with default configuration.
 // Options can be passed to customize the client.
 func NewClient(opts ...Option) *SandboxClient {
 	c := &SandboxClient{
-		TemplateTag:     "claude-code-sandbox-template:warm",
-		AgentVersion:    "latest",
-		StartScriptPath: "./image/start-claude-code.sh",
+		TemplateTag:  "claude-code-sandbox-template:warm",
+		AgentVersion: "latest",
 	}
 	for _, opt := range opts {
 		opt(c)
 	}
 	return c
+}
+
+// StartScriptBase64 returns the embedded start script as base64-encoded string.
+func (c *SandboxClient) StartScriptBase64() string {
+	return base64.StdEncoding.EncodeToString(startScript)
 }
 
 // ErrSandboxPluginNotAvailable is returned when the Docker sandbox plugin is not installed.

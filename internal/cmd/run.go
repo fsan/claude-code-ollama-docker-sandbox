@@ -5,19 +5,19 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/fsan/cloma/internal/config"
 	"github.com/fsan/cloma/internal/ollama"
 	"github.com/fsan/cloma/internal/sandbox"
 	"github.com/fsan/cloma/internal/workspace"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	runWorkspace string
-	runModel    string
-	runPort     int
-	runFlags    string
+	runModel     string
+	runPort      int
+	runFlags     string
 )
 
 // runCmd represents the run command

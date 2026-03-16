@@ -1,11 +1,9 @@
 package sandbox
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
 // Create creates a new sandbox with the given name for the specified workspace.
@@ -79,28 +77,8 @@ func (c *SandboxClient) isProvisioned(sandboxName string) (bool, error) {
 
 // provisionSandbox installs the agent start script into the sandbox.
 func (c *SandboxClient) provisionSandbox(sandboxName string) error {
-	// Find the script file - check relative paths
-	scriptPath := c.StartScriptPath
-
-	// Try relative to current directory first
-	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-		// Try relative to executable directory
-		execPath, err := os.Executable()
-		if err == nil {
-			execDir := filepath.Dir(execPath)
-			altPath := filepath.Join(execDir, scriptPath)
-			if _, err := os.Stat(altPath); err == nil {
-				scriptPath = altPath
-			}
-		}
-	}
-
-	// Read and base64-encode the start script
-	scriptContent, err := os.ReadFile(scriptPath)
-	if err != nil {
-		return fmt.Errorf("failed to read start script from %s: %w", scriptPath, err)
-	}
-	scriptB64 := base64.StdEncoding.EncodeToString(scriptContent)
+	// Use embedded start script (base64-encoded)
+	scriptB64 := c.StartScriptBase64()
 
 	// Run provision script inside the sandbox
 	provisionScript := `
